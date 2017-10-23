@@ -2,21 +2,19 @@ package com.example.anilaynaci.webservice;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONObject;
+import com.example.anilaynaci.webservice.entities.Mapping;
+import com.example.anilaynaci.webservice.entities.Wheather;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -31,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     TextView txtLatLon;
     TextView txtCity;
     TextView txtDesc;
+    TextView txtMain;
     TextView txtTemp;
     TextView txtMinTemp;
     TextView txtMaxTemp;
@@ -48,40 +47,42 @@ public class MainActivity extends AppCompatActivity {
         txtLatLon = (TextView) findViewById(R.id.txtLatLon);
         txtCity = (TextView) findViewById(R.id.txtCity);
         txtDesc = (TextView) findViewById(R.id.txtDesc);
+        txtMain = (TextView) findViewById(R.id.txtMain);
         txtTemp = (TextView) findViewById(R.id.txtTemp);
         txtMinTemp = (TextView) findViewById(R.id.txtMinTemp);
         txtMaxTemp = (TextView) findViewById(R.id.txtMaxTemp);
         getGeoCoord();
     }
 
+    //region GPS verisi alma
     public class GpsReceiver implements LocationListener {
-        @Override
-        public void onLocationChanged(Location location) {
-            if (location != null) {
-                latitude = Double.toString(location.getLatitude());
-                longitude = Double.toString(location.getLongitude());
-                txtLatLon.setText("latitude: " + latitude + " - longitude: " + longitude);
-                new Background().execute(String.format("http://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&APPID=b41774e3395246a8fcbc2eb880961c38"));
-            } else {
-                Toast.makeText(MainActivity.this, "Konum bilgisi alınamıyor", Toast.LENGTH_LONG).show();
+            @Override
+            public void onLocationChanged(Location location) {
+                if (location != null) {
+                    latitude = Double.toString(location.getLatitude());
+                    longitude = Double.toString(location.getLongitude());
+                    txtLatLon.setText("latitude: " + latitude + " - longitude: " + longitude);
+                    new Background().execute(String.format("http://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&APPID=b41774e3395246a8fcbc2eb880961c38"));
+                } else {
+                    Toast.makeText(MainActivity.this, "Konum bilgisi alınamıyor", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+                txtLatLon.setText("GPS açık. Konum verisi alınıyor...");
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+                //Toast.makeText(MainActivity.this, "GPS kapalı!", Toast.LENGTH_LONG).show();
             }
         }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            //Toast.makeText(MainActivity.this, "GPS kapalı!", Toast.LENGTH_LONG).show();
-        }
-    }
 
     public boolean GPSEnabled() {
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -95,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void getGeoCoord() {
         if (!GPSEnabled()) {
-            txtLatLon.setText("GPS KAPALI! Konum verisi alınamıyor.");
+            txtLatLon.setText("GPS kapalı! Konum verisi alınamıyor.");
         } else {
             txtLatLon.setText("Konum verisi alınıyor...");
         }
@@ -113,7 +114,9 @@ public class MainActivity extends AppCompatActivity {
         }
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 9999999L, 9999999.0F, receiver);
     }
+    //endregion
 
+    //region Web service ten veri çekme ve ekrana yazdırma
     class Background extends AsyncTask<String, String, String> {
 
         @Override
@@ -146,16 +149,21 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String s) {
-            try {
-                JSONObject jo = new JSONObject(s);
-                txtCity.setText(jo.getString("name"));
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            Wheather wheather;
 
 
-            txtWheather.setText(s);
+            Mapping mapping = new Mapping();
+
+            wheather = mapping.Mapper(s);
+
+            txtCity.setText(wheather.getName());
+            txtDesc.setText(wheather.getWeather().getDescription());
+            txtMain.setText(wheather.getWeather().getMain());
+            txtTemp.setText(Double.toString(wheather.getMain().getTemp()));
+            txtMinTemp.setText(Double.toString(wheather.getMain().getTemp_min()));
+            txtMaxTemp.setText(Double.toString(wheather.getMain().getTemp_max()));
         }
     }
+    //endregion
 }
