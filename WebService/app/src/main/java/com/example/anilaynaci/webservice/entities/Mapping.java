@@ -19,38 +19,48 @@ public class Mapping {
             wheather.setName(jo.getString("name"));
 
             //main
+
+            Main mainclass = new Main();
+
             JSONObject getWeather = jo.getJSONObject("main");
 
             Double temp = (Double)getWeather.get("temp");
-            wheather.getMain().setTemp(temp);
+            mainclass.setTemp(temp);
 
             Double temp_min = (Double)getWeather.get("temp_min");
-            wheather.getMain().setTemp_min(temp_min);
+            mainclass.setTemp_min(temp_min);
 
             Double temp_max = (Double)getWeather.get("temp_max");
-            wheather.getMain().setTemp_max(temp_max);
+            mainclass.setTemp_max(temp_max);
 
             int humidity = (int)getWeather.get("humidity");
-            wheather.getMain().setHumidity(humidity);
+            mainclass.setHumidity(humidity);
 
             int pressure = (int)getWeather.get("pressure");
-            wheather.getMain().setPressure(pressure);
+            mainclass.setPressure(pressure);
+
+            wheather.setMain(mainclass);
 
             //weather
+
+            Weather weather = new Weather();
+
             JSONArray getWeatherArray = jo.getJSONArray("weather");
             JSONObject getWeatherArray1 = getWeatherArray.getJSONObject(0);
 
             int id = (int)getWeatherArray1.get("id");
-            wheather.getWeather().setId(id);
+            weather.setId(id);
 
             String main = (String)getWeatherArray1.get("main");
-            wheather.getWeather().setMain(main);
+            weather.setMain(main);
 
             String description = (String)getWeatherArray1.get("description");
-            wheather.getWeather().setDescription(description);
+            weather.setDescription(description);
 
             String icon = (String)getWeatherArray1.get("icon");
-            wheather.getWeather().setIcon(icon);
+            weather.setIcon(icon);
+
+            wheather.setWeather(weather);
 
         } catch (Exception e) {
             e.printStackTrace();

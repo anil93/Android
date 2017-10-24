@@ -3,6 +3,8 @@ package com.example.anilaynaci.webservice;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -10,30 +12,34 @@ import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.anilaynaci.webservice.entities.Mapping;
 import com.example.anilaynaci.webservice.entities.Wheather;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
     String latitude;
     String longitude;
-    TextView txtWheather;
+
     TextView txtLatLon;
-    TextView txtCity;
+    //TextView txtCity;
     TextView txtDesc;
     TextView txtMain;
-    TextView txtTemp;
-    TextView txtMinTemp;
-    TextView txtMaxTemp;
+    TextView txtTempMin;
+    TextView txtTempMax;
+    TextView txtHumidity;
+    TextView txtPressure;
+    ImageView imgIcon;
+
     LocationManager lm;
+
+    byte[] icon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,26 +49,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init() {
-        txtWheather = (TextView) findViewById(R.id.txtWheather);
+
         txtLatLon = (TextView) findViewById(R.id.txtLatLon);
-        txtCity = (TextView) findViewById(R.id.txtCity);
+        //txtCity = (TextView) findViewById(R.id.txtCity);
         txtDesc = (TextView) findViewById(R.id.txtDesc);
         txtMain = (TextView) findViewById(R.id.txtMain);
-        txtTemp = (TextView) findViewById(R.id.txtTemp);
-        txtMinTemp = (TextView) findViewById(R.id.txtMinTemp);
-        txtMaxTemp = (TextView) findViewById(R.id.txtMaxTemp);
+        txtTempMin = (TextView) findViewById(R.id.txtTempMin);
+        txtTempMax = (TextView) findViewById(R.id.txtTempMax);
+        txtHumidity = (TextView) findViewById(R.id.txtHumidity);
+        txtPressure = (TextView) findViewById(R.id.txtPressure);
+
+        imgIcon = (ImageView) findViewById(R.id.imgIcon);
+
         getGeoCoord();
     }
 
     //region GPS verisi alma
+
     public class GpsReceiver implements LocationListener {
+
             @Override
             public void onLocationChanged(Location location) {
+
                 if (location != null) {
                     latitude = Double.toString(location.getLatitude());
                     longitude = Double.toString(location.getLongitude());
+
                     txtLatLon.setText("latitude: " + latitude + " - longitude: " + longitude);
-                    new Background().execute(String.format("http://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&APPID=b41774e3395246a8fcbc2eb880961c38"));
+
+                    new Background().
+                            execute(String.format("http://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&APPID=b41774e3395246a8fcbc2eb880961c38"));
                 } else {
                     Toast.makeText(MainActivity.this, "Konum bilgisi alınamıyor", Toast.LENGTH_LONG).show();
                 }
@@ -84,7 +100,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-    public boolean GPSEnabled() {
+    public boolean isGPSEnabled() {
+
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -95,13 +112,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getGeoCoord() {
-        if (!GPSEnabled()) {
+
+        if (!isGPSEnabled()) {
             txtLatLon.setText("GPS kapalı! Konum verisi alınamıyor.");
         } else {
             txtLatLon.setText("Konum verisi alınıyor...");
         }
+
         GpsReceiver receiver = new GpsReceiver();
         lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -112,34 +132,38 @@ public class MainActivity extends AppCompatActivity {
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 9999999L, 9999999.0F, receiver);
     }
+
     //endregion
 
+
+
+
+
+
     //region Web service ten veri çekme ve ekrana yazdırma
+
     class Background extends AsyncTask<String, String, String> {
 
         @Override
         protected String doInBackground(String... params) {
-            HttpURLConnection connection = null;
-            BufferedReader br = null;
+
+            Service service = new Service();
+            String data = service.getData(params[0]);
+
             try {
-                URL url = new URL(params[0]);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.connect();
-                InputStream is = connection.getInputStream();
-                InputStreamReader isr = new InputStreamReader(is);
-                br = new BufferedReader(isr);
-                String line;
-                String file = "";
-                while ((line = br.readLine()) != null) {
-                    file += line;
-                }
-                return file;
-            } catch (Exception e) {
+                JSONObject jo = new JSONObject(data);
+                JSONArray getWeatherArray = jo.getJSONArray("weather");
+                JSONObject getWeatherArray1 = getWeatherArray.getJSONObject(0);
+                //service'ten iconu alma
+                icon = service.getIcon("http://openweathermap.org/img/w/"+getWeatherArray1.get("icon")+".png");
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
-            return "error";
+
+            return data;
         }
 
         @Override
@@ -151,18 +175,26 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
 
             Wheather wheather;
-
-
             Mapping mapping = new Mapping();
-
             wheather = mapping.Mapper(s);
 
-            txtCity.setText(wheather.getName());
-            txtDesc.setText(wheather.getWeather().getDescription());
-            txtMain.setText(wheather.getWeather().getMain());
-            txtTemp.setText(Double.toString(wheather.getMain().getTemp()));
-            txtMinTemp.setText(Double.toString(wheather.getMain().getTemp_min()));
-            txtMaxTemp.setText(Double.toString(wheather.getMain().getTemp_max()));
+            try{
+                //txtCity.setText(wheather.getName());
+                txtDesc.setText(wheather.getWeather().getDescription());
+                txtMain.setText(wheather.getWeather().getMain());
+                txtTempMin.setText(Double.toString(Math.round(wheather.getMain().getTemp_min()-273d)));
+                txtTempMax.setText(Double.toString(Math.round(wheather.getMain().getTemp_max()-273d)));
+                txtHumidity.setText(Integer.toString(wheather.getMain().getHumidity()));
+                txtPressure.setText(Integer.toString(wheather.getMain().getPressure()));
+
+                //ImageView image = (ImageView) findViewById(android.R.id.icon);
+                Bitmap bMap = BitmapFactory.decodeByteArray(icon, 0, icon.length);
+                imgIcon.setImageBitmap(bMap);
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+
         }
     }
     //endregion

@@ -6,10 +6,10 @@ package com.example.anilaynaci.webservice.entities;
 
 public class Wheather {
 
-    Coordinates coord = new Coordinates();
-    Sys sys = new Sys();
-    Weather weather = new Weather();
-    Main main = new Main();
+    Coordinates coord;
+    Sys sys;
+    Weather weather;
+    Main main;
     String name;
 
     public String getName() {
@@ -28,10 +28,6 @@ public class Wheather {
         this.coord = coord;
     }
 
-
-
-
-
     public Sys getSys() {
         return sys;
     }
@@ -40,12 +36,6 @@ public class Wheather {
         this.sys = sys;
     }
 
-
-
-
-
-
-
     public Weather getWeather() {
         return weather;
     }
@@ -53,10 +43,6 @@ public class Wheather {
     public void setWeather(Weather weather) {
         this.weather = weather;
     }
-
-
-
-
 
     public Main getMain() {
         return main;
