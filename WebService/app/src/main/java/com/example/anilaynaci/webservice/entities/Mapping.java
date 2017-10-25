@@ -18,6 +18,16 @@ public class Mapping {
             JSONObject jo = new JSONObject(s);
             wheather.setName(jo.getString("name"));
 
+            //sys
+            Sys sys = new Sys();
+
+            JSONObject getSys = jo.getJSONObject("sys");
+
+            String country = (String)getSys.get("country");
+            sys.setCountry(country);
+
+            wheather.setSys(sys);
+
             //main
 
             Main mainclass = new Main();

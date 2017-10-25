@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -12,7 +13,9 @@ import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,11 +27,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
+
+    byte[] icon;
+
+    Drawable drawable;
+
     String latitude;
     String longitude;
 
     TextView txtLatLon;
-    //TextView txtCity;
     TextView txtDesc;
     TextView txtMain;
     TextView txtTempMin;
@@ -37,9 +44,11 @@ public class MainActivity extends AppCompatActivity {
     TextView txtPressure;
     ImageView imgIcon;
 
-    LocationManager lm;
+    LinearLayout topLayout;
+    LinearLayout middleLayout;
+    LinearLayout bottomLayout;
 
-    byte[] icon;
+    LocationManager lm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
     public void init() {
 
         txtLatLon = (TextView) findViewById(R.id.txtLatLon);
-        //txtCity = (TextView) findViewById(R.id.txtCity);
         txtDesc = (TextView) findViewById(R.id.txtDesc);
         txtMain = (TextView) findViewById(R.id.txtMain);
         txtTempMin = (TextView) findViewById(R.id.txtTempMin);
@@ -60,6 +68,10 @@ public class MainActivity extends AppCompatActivity {
         txtPressure = (TextView) findViewById(R.id.txtPressure);
 
         imgIcon = (ImageView) findViewById(R.id.imgIcon);
+
+        topLayout = (LinearLayout) findViewById(R.id.TopLayout);
+        middleLayout = (LinearLayout) findViewById(R.id.MiddleLayout);
+        bottomLayout = (LinearLayout) findViewById(R.id.BottomLayout);
 
         getGeoCoord();
     }
@@ -75,8 +87,6 @@ public class MainActivity extends AppCompatActivity {
                     latitude = Double.toString(location.getLatitude());
                     longitude = Double.toString(location.getLongitude());
 
-                    txtLatLon.setText("latitude: " + latitude + " - longitude: " + longitude);
-
                     new Background().
                             execute(String.format("http://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&APPID=b41774e3395246a8fcbc2eb880961c38"));
                 } else {
@@ -91,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onProviderEnabled(String provider) {
-                txtLatLon.setText("GPS açık. Konum verisi alınıyor...");
+                //txtLatLon.setText("GPS açık. Konum verisi alınıyor...");
             }
 
             @Override
             public void onProviderDisabled(String provider) {
-                //Toast.makeText(MainActivity.this, "GPS kapalı!", Toast.LENGTH_LONG).show();
+
             }
         }
 
@@ -123,13 +133,6 @@ public class MainActivity extends AppCompatActivity {
         lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
 
@@ -137,11 +140,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //endregion
-
-
-
-
-
 
     //region Web service ten veri çekme ve ekrana yazdırma
 
@@ -157,8 +155,12 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject jo = new JSONObject(data);
                 JSONArray getWeatherArray = jo.getJSONArray("weather");
                 JSONObject getWeatherArray1 = getWeatherArray.getJSONObject(0);
+
                 //service'ten iconu alma
-                icon = service.getIcon("http://openweathermap.org/img/w/"+getWeatherArray1.get("icon")+".png");
+
+                String iconCode = String.format(getWeatherArray1.get("icon")+".png");
+                drawable = service.getDrawable(iconCode);
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -179,22 +181,26 @@ public class MainActivity extends AppCompatActivity {
             wheather = mapping.Mapper(s);
 
             try{
-                //txtCity.setText(wheather.getName());
+                String city = wheather.getName();
+                String country = wheather.getSys().getCountry();
+                txtLatLon.setText(country+" ,"+city);
                 txtDesc.setText(wheather.getWeather().getDescription());
                 txtMain.setText(wheather.getWeather().getMain());
-                txtTempMin.setText(Double.toString(Math.round(wheather.getMain().getTemp_min()-273d)));
-                txtTempMax.setText(Double.toString(Math.round(wheather.getMain().getTemp_max()-273d)));
-                txtHumidity.setText(Integer.toString(wheather.getMain().getHumidity()));
-                txtPressure.setText(Integer.toString(wheather.getMain().getPressure()));
+                int tempMin = (int)(Math.round(wheather.getMain().getTemp_min())-273d);
+                txtTempMin.setText(String.format(Integer.toString(tempMin)+"°C"));
+                int tempMax = (int)(Math.round(wheather.getMain().getTemp_max())-273d);
+                txtTempMax.setText(String.format(Integer.toString(tempMax)+"°C"));
+                txtHumidity.setText(String.format(Integer.toString(wheather.getMain().getHumidity()))+" %");
+                txtPressure.setText(String.format(Integer.toString(wheather.getMain().getPressure()))+" hPa");
 
-                //ImageView image = (ImageView) findViewById(android.R.id.icon);
-                Bitmap bMap = BitmapFactory.decodeByteArray(icon, 0, icon.length);
-                imgIcon.setImageBitmap(bMap);
+                imgIcon.setImageDrawable(drawable);
+
+                middleLayout.setVisibility(View.VISIBLE);
+                bottomLayout.setVisibility(View.VISIBLE);
             }
             catch(Exception e){
                 e.printStackTrace();
             }
-
         }
     }
     //endregion
