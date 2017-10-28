@@ -5,11 +5,19 @@ package com.example.anilaynaci.webservice.entities;
  */
 
 public class Main {
+    Double temp_min;
+    Double temp_max;
     Double temp;
     int humidity;
     int pressure;
-    Double temp_min;
-    Double temp_max;
+
+    public int getPressure() {
+        return pressure;
+    }
+
+    public void setPressure(int pressure) {
+        this.pressure = pressure;
+    }
 
     public Double getTemp() {
         return temp;
@@ -27,13 +35,7 @@ public class Main {
         this.humidity = humidity;
     }
 
-    public int getPressure() {
-        return pressure;
-    }
 
-    public void setPressure(int pressure) {
-        this.pressure = pressure;
-    }
 
     public Double getTemp_min() {
         return temp_min;

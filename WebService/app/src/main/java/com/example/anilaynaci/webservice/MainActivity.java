@@ -3,8 +3,6 @@ package com.example.anilaynaci.webservice;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
@@ -28,12 +26,12 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    byte[] icon;
-
     Drawable drawable;
 
     String latitude;
     String longitude;
+    String city;
+    String country;
 
     TextView txtLatLon;
     TextView txtDesc;
@@ -73,11 +71,56 @@ public class MainActivity extends AppCompatActivity {
         middleLayout = (LinearLayout) findViewById(R.id.MiddleLayout);
         bottomLayout = (LinearLayout) findViewById(R.id.BottomLayout);
 
-        getGeoCoord();
+        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        for(String permission: permissions){
+            if(ActivityCompat.shouldShowRequestPermissionRationale(this, permission)){
+                // show user that permission was denied. inactive the location based feature or force user to close the app
+                Toast.makeText(this,"GPS izni verilmedi. Konum almak için kabul etmelisin.",Toast.LENGTH_LONG).show();
+                //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            }else{
+                if(ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED){
+                    Toast.makeText(this,"GPS izni verildi.",Toast.LENGTH_LONG).show();
+                    //  get Location from your device by some method or code
+                    getGeoCoord();
+                } else{
+                    //set to never ask again
+                    Toast.makeText(this,"GPS izni verilmemiş. Tekrar sorma olarak belirtilmiş. Lütfen uygulama ayarlarını sıfırlayın.",Toast.LENGTH_LONG).show();
+                    //do something here.
+                }
+            }
+        }
+    }
+
+    void ShowInputValue(Wheather wheather,Drawable d){
+
+        try{
+            city = wheather.getName();
+            country = wheather.getSys().getCountry();
+            txtLatLon.setText(country+" ,"+city);
+            txtDesc.setText(wheather.getWeather().getDescription());
+            txtMain.setText(wheather.getWeather().getMain());
+            int tempMin = (int)(Math.round(wheather.getMain().getTemp_min())-273d);
+            txtTempMin.setText(String.format(Integer.toString(tempMin)+"°C"));
+            int tempMax = (int)(Math.round(wheather.getMain().getTemp_max())-273d);
+            txtTempMax.setText(String.format(Integer.toString(tempMax)+"°C"));
+            txtHumidity.setText(String.format(Integer.toString(wheather.getMain().getHumidity()))+" %");
+            txtPressure.setText(String.format(Integer.toString(wheather.getMain().getPressure()))+" hPa");
+
+            imgIcon.setImageDrawable(d);
+
+            middleLayout.setVisibility(View.VISIBLE);
+            bottomLayout.setVisibility(View.VISIBLE);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     //region GPS verisi alma
-
     public class GpsReceiver implements LocationListener {
 
             @Override
@@ -101,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onProviderEnabled(String provider) {
-                //txtLatLon.setText("GPS açık. Konum verisi alınıyor...");
+
             }
 
             @Override
@@ -138,11 +181,9 @@ public class MainActivity extends AppCompatActivity {
 
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 9999999L, 9999999.0F, receiver);
     }
-
     //endregion
 
     //region Web service ten veri çekme ve ekrana yazdırma
-
     class Background extends AsyncTask<String, String, String> {
 
         @Override
@@ -157,7 +198,6 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject getWeatherArray1 = getWeatherArray.getJSONObject(0);
 
                 //service'ten iconu alma
-
                 String iconCode = String.format(getWeatherArray1.get("icon")+".png");
                 drawable = service.getDrawable(iconCode);
 
@@ -180,27 +220,7 @@ public class MainActivity extends AppCompatActivity {
             Mapping mapping = new Mapping();
             wheather = mapping.Mapper(s);
 
-            try{
-                String city = wheather.getName();
-                String country = wheather.getSys().getCountry();
-                txtLatLon.setText(country+" ,"+city);
-                txtDesc.setText(wheather.getWeather().getDescription());
-                txtMain.setText(wheather.getWeather().getMain());
-                int tempMin = (int)(Math.round(wheather.getMain().getTemp_min())-273d);
-                txtTempMin.setText(String.format(Integer.toString(tempMin)+"°C"));
-                int tempMax = (int)(Math.round(wheather.getMain().getTemp_max())-273d);
-                txtTempMax.setText(String.format(Integer.toString(tempMax)+"°C"));
-                txtHumidity.setText(String.format(Integer.toString(wheather.getMain().getHumidity()))+" %");
-                txtPressure.setText(String.format(Integer.toString(wheather.getMain().getPressure()))+" hPa");
-
-                imgIcon.setImageDrawable(drawable);
-
-                middleLayout.setVisibility(View.VISIBLE);
-                bottomLayout.setVisibility(View.VISIBLE);
-            }
-            catch(Exception e){
-                e.printStackTrace();
-            }
+            ShowInputValue(wheather, drawable);
         }
     }
     //endregion
