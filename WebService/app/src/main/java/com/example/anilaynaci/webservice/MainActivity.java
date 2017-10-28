@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             int tempMax = (int)(Math.round(wheather.getMain().getTemp_max())-273d);
             txtTempMax.setText(String.format(Integer.toString(tempMax)+"°C"));
             txtHumidity.setText(String.format(Integer.toString(wheather.getMain().getHumidity()))+" %");
-            txtPressure.setText(String.format(Integer.toString(wheather.getMain().getPressure()))+" hPa");
+            txtPressure.setText(Integer.toString(wheather.getMain().getPressure()) + " hPa");
 
             imgIcon.setImageDrawable(d);
 

@@ -46,8 +46,8 @@ public class Mapping {
             int humidity = (int)getWeather.get("humidity");
             mainclass.setHumidity(humidity);
 
-            /*int pressure = (int)getWeather.get("pressure");
-            mainclass.setPressure(pressure);*/
+            Object pressure = getWeather.get("pressure");
+            mainclass.setPressure((Integer) pressure);
 
             wheather.setMain(mainclass);
 

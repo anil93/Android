@@ -9,13 +9,13 @@ public class Main {
     Double temp_max;
     Double temp;
     int humidity;
-    int pressure;
+    Integer pressure;
 
-    public int getPressure() {
+    public Integer getPressure() {
         return pressure;
     }
 
-    public void setPressure(int pressure) {
+    public void setPressure(Integer pressure) {
         this.pressure = pressure;
     }
 
@@ -34,8 +34,6 @@ public class Main {
     public void setHumidity(int humidity) {
         this.humidity = humidity;
     }
-
-
 
     public Double getTemp_min() {
         return temp_min;
